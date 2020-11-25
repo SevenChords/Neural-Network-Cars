@@ -828,6 +828,20 @@ while True:
                 bg4 = pygame.image.load('randomGeneratedTrackBack.png')
             
             if event.key == ord("b"):
+                if len(selectedCars) == 0:
+                    tempBestScore = 0
+                    tempSecondBest = 0
+                    for nncar in nnCars:
+                        if nncar.score > tempBestScore:
+                            tempSecondBest = tempBestScore
+                            tempBestScore = nncar.score
+                    for nncar in nnCars:
+                        if nncar.score == tempBestScore or nncar.score == tempSecondBest:
+                            selected += 1
+                            selectedCars.append(nncar)
+                        if selected == 2:
+                            break
+                            
                 if len(selectedCars) == 2:
                     for nncar in nnCars:
                         nncar.score = 0
@@ -870,6 +884,20 @@ while True:
                     selectedCars.clear()
             
             if event.key == ord("m"):
+                if len(selectedCars) == 0:
+                    tempBestScore = 0
+                    tempSecondBest = 0
+                    for nncar in nnCars:
+                        if nncar.score > tempBestScore:
+                            tempSecondBest = tempBestScore
+                            tempBestScore = nncar.score
+                    for nncar in nnCars:
+                        if nncar.score == tempBestScore or nncar.score == tempSecondBest:
+                            selected += 1
+                            selectedCars.append(nncar)
+                        if selected == 2:
+                            break
+                            
                 if len(selectedCars) == 2:
                     for nncar in nnCars:
                         nncar.score = 0
