@@ -30,6 +30,7 @@ display_info = True  # If true then display info is shown
 frames = 0
 maxSpeed = 10
 number_track = 1
+automaticBreeding = True
 
 white_small_car = pygame.image.load('Images/Sprites/white_small.png')
 white_big_car = pygame.image.load('Images/Sprites/white_big.png')
@@ -528,22 +529,26 @@ class Car:
         self.acceleration = accel
     
     def rotate(self, rot):
-        self.angle += rot
+        if self.velocity >= 1.5:
+            self.angle += rot
         if self.angle > 360:
             self.angle = 0
         if self.angle < 0:
             self.angle = 360 + self.angle
     
     def update(self):
-        self.score += self.velocity
-        if self.acceleration != 0:
+        if self.velocity >= 1.5:
+            self.score += self.velocity
+        if self.acceleration >= 0.2:
             self.velocity += self.acceleration
             if self.velocity > maxSpeed:
                 self.velocity = maxSpeed
             elif self.velocity < 0:
                 self.velocity = 0
-        else:
+        elif self.velocity > 0.5:
             self.velocity *= 0.92
+        else:
+            self.velocity += 1
         
         self.x, self.y = move((self.x, self.y), self.angle, self.velocity)
         self.center = self.x, self.y
@@ -651,7 +656,7 @@ class Car:
 
 
 nnCars = []  # List of neural network cars
-num_of_nnCars = 50  # Number of neural network cars
+num_of_nnCars = 100  # Number of neural network cars
 alive = num_of_nnCars  # Number of not collided (alive) cars
 collidedCars = []  # List containing collided cars
 
@@ -748,7 +753,7 @@ for i in range(num_of_nnCars):
     nnCars.append(Car([inputLayer, hiddenLayer, outputLayer]))
 
 
-def redrawGameWindow():  # Called on very frame
+def redrawGameWindow():  # Called on every frame
     
     global alive
     global frames
@@ -1043,6 +1048,132 @@ while True:
         car.set_accel(0)
     if keys[pygame.K_DOWN]:
         car.set_accel(-0.2)
+    
+    if automaticBreeding:
+        if frames >= 900:
+            frames = 0
+            if generation % 10 == 0:
+                if len(selectedCars) == 0:
+                    tempBestScore = 0
+                    tempSecondBest = 0
+                    for nncar in nnCars:
+                        if nncar.score > tempBestScore:
+                            tempSecondBest = tempBestScore
+                            tempBestScore = nncar.score
+                    for nncar in nnCars:
+                        if nncar.score == tempBestScore or nncar.score == tempSecondBest:
+                            selected += 1
+                            selectedCars.append(nncar)
+                        if selected == 2:
+                            break
+        
+                if len(selectedCars) == 2:
+                    for nncar in nnCars:
+                        nncar.score = 0
+            
+                    alive = num_of_nnCars
+                    generation += 1
+                    selected = 0
+                    nnCars.clear()
+            
+                    for i in range(num_of_nnCars):
+                        nnCars.append(Car([inputLayer, hiddenLayer, outputLayer]))
+            
+                    for i in range(0, num_of_nnCars - 2, 2):
+                        uniformCrossOverWeights(selectedCars[0], selectedCars[1], nnCars[i], nnCars[i + 1])
+                        uniformCrossOverBiases(selectedCars[0], selectedCars[1], nnCars[i], nnCars[i + 1])
+            
+                    nnCars[num_of_nnCars - 2] = selectedCars[0]
+                    nnCars[num_of_nnCars - 1] = selectedCars[1]
+            
+                    nnCars[num_of_nnCars - 2].car_image = green_small_car
+                    nnCars[num_of_nnCars - 1].car_image = green_small_car
+            
+                    nnCars[num_of_nnCars - 2].resetPosition()
+                    nnCars[num_of_nnCars - 1].resetPosition()
+            
+                    nnCars[num_of_nnCars - 2].collided = False
+                    nnCars[num_of_nnCars - 1].collided = False
+            
+                    for i in range(num_of_nnCars - 2):
+                        for j in range(mutationRate):
+                            mutateOneWeightGene(nnCars[i], auxcar)
+                            mutateOneWeightGene(auxcar, nnCars[i])
+                            mutateOneBiasesGene(nnCars[i], auxcar)
+                            mutateOneBiasesGene(auxcar, nnCars[i])
+            
+                    for nncar in nnCars:
+                        nncar.x = 140
+                        nncar.y = 610
+            
+                    selectedCars.clear()
+            
+                    number_track = 2
+                    for nncar in nnCars:
+                        nncar.velocity = 0
+                        nncar.acceleration = 0
+                        nncar.x = 140
+                        nncar.y = 610
+                        nncar.angle = 180
+                        nncar.collided = False
+                    generateRandomMap(gameDisplay)
+                    bg = pygame.image.load('randomGeneratedTrackFront.png')
+                    bg4 = pygame.image.load('randomGeneratedTrackBack.png')
+            else:
+                if len(selectedCars) == 0:
+                    tempBestScore = 0
+                    tempSecondBest = 0
+                    for nncar in nnCars:
+                        if nncar.score > tempBestScore:
+                            tempSecondBest = tempBestScore
+                            tempBestScore = nncar.score
+                    for nncar in nnCars:
+                        if nncar.score == tempBestScore or nncar.score == tempSecondBest:
+                            selected += 1
+                            selectedCars.append(nncar)
+                        if selected == 2:
+                            break
+        
+                if len(selectedCars) == 2:
+                    for nncar in nnCars:
+                        nncar.score = 0
+            
+                    alive = num_of_nnCars
+                    generation += 1
+                    selected = 0
+                    nnCars.clear()
+            
+                    for i in range(num_of_nnCars):
+                        nnCars.append(Car([inputLayer, hiddenLayer, outputLayer]))
+            
+                    for i in range(0, num_of_nnCars - 2, 2):
+                        uniformCrossOverWeights(selectedCars[0], selectedCars[1], nnCars[i], nnCars[i + 1])
+                        uniformCrossOverBiases(selectedCars[0], selectedCars[1], nnCars[i], nnCars[i + 1])
+            
+                    nnCars[num_of_nnCars - 2] = selectedCars[0]
+                    nnCars[num_of_nnCars - 1] = selectedCars[1]
+            
+                    nnCars[num_of_nnCars - 2].car_image = green_small_car
+                    nnCars[num_of_nnCars - 1].car_image = green_small_car
+            
+                    nnCars[num_of_nnCars - 2].resetPosition()
+                    nnCars[num_of_nnCars - 1].resetPosition()
+            
+                    nnCars[num_of_nnCars - 2].collided = False
+                    nnCars[num_of_nnCars - 1].collided = False
+            
+                    for i in range(num_of_nnCars - 2):
+                        for j in range(mutationRate):
+                            mutateOneWeightGene(nnCars[i], auxcar)
+                            mutateOneWeightGene(auxcar, nnCars[i])
+                            mutateOneBiasesGene(nnCars[i], auxcar)
+                            mutateOneBiasesGene(auxcar, nnCars[i])
+                    if number_track != 1:
+                        for nncar in nnCars:
+                            nncar.x = 140
+                            nncar.y = 610
+            
+                    selectedCars.clear()
     
     redrawGameWindow()
     
